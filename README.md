@@ -17,12 +17,12 @@ quickly understand the relationship between datasets and detect shifts or anomal
 [Optimize KDE Bandwidth using Cross-Validation]
     |
     v
-[Fit KDE to Latent Space of Original CIFAR-10]
+[Fit KDE to Latent Space of Original Dataset]
     |
     v
-[For each Corruption Type]
+[For each Dataset to Compare]
     |
-    |--[Transform Corrupted Images to Latent Space]
+    |--[Transform Dataset to Latent Space]
     |       |
     |       v
     |   [Calculate Log Likelihood with KDE]
