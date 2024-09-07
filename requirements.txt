@@ -1,0 +1,14 @@
+scikit-image
+pandas
+numpy
+tf_keras
+tensorflow
+tensorflow_probability
+tensorflow-datasets
+scikit-learn
+matplotlib
+keras
+seaborn
+matplotlib
+keras_cv
+scipy
