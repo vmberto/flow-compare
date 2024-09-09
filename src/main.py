@@ -1,5 +1,5 @@
 from lib.data_prep import load_dataset
-from lib.flow_model import create_normalizing_flow_model, get_latent_space
+from lib.flow_model import create_normalizing_flow_maf_model, get_latent_space
 from lib.kde_estimation import optimize_bandwidth, calculate_log_likelihood
 from lib.latent_space import plot_latent_space
 from lib.plot_results import plot_log_likelihoods
@@ -32,9 +32,9 @@ def main():
         'cifar10_corrupted/zoom_blur_3',
     ]
 
-    flow_model = create_normalizing_flow_model()
+    flow_model = create_normalizing_flow_maf_model()
 
-    original_dataset = load_dataset(original_dataset_name)
+    original_dataset = load_dataset(original_dataset_name).take(1)
     original_images, _ = next(iter(original_dataset))
     latents_original = get_latent_space(flow_model, original_images)
 
@@ -47,7 +47,11 @@ def main():
     dataset_names = []
 
     for dataset_name in comparison_datasets_names:
-        comparison_dataset = load_dataset(dataset_name)
+        try:
+            comparison_dataset = load_dataset(dataset_name).take(1)
+        except Exception as e:
+            print(f"Error loading {dataset_name}: {e}")
+            continue
         comparison_images, _ = next(iter(comparison_dataset))
         latents_comparison = get_latent_space(flow_model, comparison_images)
         log_likelihood = calculate_log_likelihood(kde, latents_comparison)
