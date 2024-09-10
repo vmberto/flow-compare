@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def plot_similarity(datasets, log_likelihoods, original_dataset_name, errors=None):
     plt.figure(figsize=(14, 9))  # Increase figure size for better clarity
 
@@ -37,24 +38,19 @@ def plot_similarity(datasets, log_likelihoods, original_dataset_name, errors=Non
     plt.rc('ytick', labelsize=12)
     plt.rc('legend', fontsize=14)
 
-    # Plot horizontal bar chart with error bars (excluding the original dataset)
     plt.barh(datasets, similarities, xerr=errors, color=colors, edgecolor='black', alpha=0.7, capsize=5)
 
-    # Annotate bars with similarity values
     for i, v in enumerate(similarities):
         plt.text(v + 1, i, f'{v:.1f}%', color='black', va='center')  # Display percentage with 1 decimal
 
-    # Add a dotted baseline for 100% similarity (original dataset baseline)
     if original_dataset_ll is not None:
         plt.axvline(x=100, color='blue', linestyle='--', label=f'{original_dataset_name} Baseline (100%)')
 
-    # Labels and title with increased font size
     plt.xlabel("Similarity to Original Dataset (%)", fontsize=14)
     plt.ylabel("Dataset", fontsize=14)
     plt.title(f"Similarity of Different Datasets Compared to {original_dataset_name} (Crescent Order)", fontsize=16)
     plt.legend()
 
-    # Save the plot
     plt.tight_layout()
     output_dir = os.path.join(os.getcwd(), 'output')
     filepath = os.path.join(output_dir, f'similarity_plot_sorted_{original_dataset_name}.png')

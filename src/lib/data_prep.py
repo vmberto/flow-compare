@@ -1,14 +1,13 @@
 import tensorflow as tf
-import keras_cv
+import keras
 
 
 # Example of user-defined dataset preparation
-def prepare_dataset(ds, image_size=(128, 128), batch_size=64):
-    resize_and_rescale = tf.keras.Sequential([
-        keras_cv.layers.Resizing(image_size[0], image_size[1]),
-        keras_cv.layers.Rescaling(1.0 / 255)
+def prepare_dataset(ds, image_size=(128, 128)):
+    resize_and_rescale = keras.Sequential([
+        keras.layers.Resizing(image_size[0], image_size[1]),
+        keras.layers.Rescaling(1./255),
     ])
-
-    ds = ds.map(lambda x, y: (resize_and_rescale(x), y), num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    ds = ds.batch(batch_size)
-    return ds.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    ds = ds.map(lambda x, y: (resize_and_rescale(x), y))
+    ds = ds.batch(64).prefetch(tf.data.AUTOTUNE)
+    return ds
