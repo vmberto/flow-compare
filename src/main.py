@@ -1,13 +1,13 @@
-from src.lib.flow_model import get_latent_space
+from src.lib.flow_model import create_normalizing_flow_realnvp_model, get_latent_space, train_realnvp
 from src.lib.kde_estimation import optimize_bandwidth, calculate_log_likelihood
 from src.lib.plot_results import plot_similarity
-from src.lib.flow_model import create_normalizing_flow_realnvp_model
 from src.lib.latent_space import plot_latent_space
 from sklearn.neighbors import KernelDensity
 
 
 def compare_datasets(original_dataset, comparison_datasets, original_dataset_name, comparison_datasets_names, image_shape):
     flow_model = create_normalizing_flow_realnvp_model(image_shape)
+    train_realnvp(flow_model, flow_model.bijector.bijectors, original_dataset, 1, .0001)
 
     original_images, _ = next(iter(original_dataset))
     latents_original = get_latent_space(flow_model, original_images)
