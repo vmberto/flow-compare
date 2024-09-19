@@ -1,5 +1,5 @@
 import tensorflow_datasets as tfds
-from src.lib.data_prep import prepare_dataset
+from src.data.data_prep import prepare_dataset
 from src.main import compare_datasets
 
 original_dataset_name = "oxford_flowers102"

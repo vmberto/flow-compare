@@ -1,10 +1,9 @@
 from keras.src.applications.xception import Xception
-from tf_keras.applications import ResNet50
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import wasserstein_distance
 import tensorflow_datasets as tfds
-from src.lib.data_prep import prepare_dataset
+from src.data.data_prep import prepare_dataset
 
 
 def extract_features(dataset):
