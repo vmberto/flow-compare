@@ -4,6 +4,7 @@ numpy
 tf_keras
 tensorflow
 tensorflow_probability
+tensorflow-addons
 tensorflow-datasets
 scikit-learn
 matplotlib
