@@ -1,4 +1,3 @@
-from src.model.model import build_encoder, build_decoder
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers, models, callbacks
 
@@ -12,7 +11,7 @@ def train(x_train, x_val, x_test, input_shape):
         x = layers.Activation('relu')(x)
         x = layers.Conv2D(filters, kernel_size, strides=1, padding='same')(x)
         x = layers.BatchNormalization()(x)
-        # If dimensions don't match, adjust the shortcut
+
         if stride != 1 or shortcut.shape[-1] != filters:
             shortcut = layers.Conv2D(filters, 1, strides=stride, padding='same')(shortcut)
             shortcut = layers.BatchNormalization()(shortcut)
@@ -20,7 +19,6 @@ def train(x_train, x_val, x_test, input_shape):
         x = layers.Activation('relu')(x)
         return x
 
-    # Encoder
     encoder_input = layers.Input(shape=input_shape)
 
     x = layers.Conv2D(64, (3, 3), strides=2, padding='same')(encoder_input)  # 16x16x64
@@ -44,12 +42,10 @@ def train(x_train, x_val, x_test, input_shape):
     x = residual_block(x, 256)
     x = residual_block(x, 256)
 
-    encoder_output = x  # Keep the output shape for the decoder
+    encoder_output = x
 
-    # Define the encoder model
     encoder = models.Model(encoder_input, encoder_output, name='encoder')
 
-    # Decoder
     decoder_input = layers.Input(shape=encoder_output.shape[1:])
 
     x = residual_block(decoder_input, 256)
@@ -76,25 +72,21 @@ def train(x_train, x_val, x_test, input_shape):
     x = layers.Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)  # Output layer with sigmoid activation
     decoder_output = x
 
-    # Define the decoder model
     decoder = models.Model(decoder_input, decoder_output, name='decoder')
 
-    # Autoencoder = Encoder + Decoder
     autoencoder_input = encoder_input
     encoded_img = encoder(autoencoder_input)
     decoded_img = decoder(encoded_img)
     autoencoder = models.Model(autoencoder_input, decoded_img, name='autoencoder')
 
-    # Compile the autoencoder with MSE loss
     autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 
-    # Train the autoencoder
     epochs = 50
     batch_size = 256
 
     class ReconstructionCallback(callbacks.Callback):
         def on_epoch_end(self, epoch, logs=None):
-            test_img = x_test[:1]  # Use a test image for evaluation
+            test_img = x_test[:1]
             reconstructed_img = self.model.predict(test_img)
             plt.imshow(reconstructed_img[0])
             plt.title(f"Reconstruction at Epoch {epoch + 1}")
@@ -106,8 +98,10 @@ def train(x_train, x_val, x_test, input_shape):
         batch_size=batch_size,
         shuffle=True,
         validation_data=(x_val, x_val),
-        callbacks=[ReconstructionCallback(),
-                   callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)]
+        callbacks=[
+            # ReconstructionCallback(),
+           callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
+        ]
     )
 
     return autoencoder, encoder

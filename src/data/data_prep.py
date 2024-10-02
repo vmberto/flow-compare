@@ -1,9 +1,8 @@
 import tensorflow as tf
 import keras
-import tensorflow_datasets as tfds
-import numpy as np
 import numpy as np
 import tensorflow_datasets as tfds
+from sklearn.model_selection import KFold
 
 
 comparison_datasets_names = [
@@ -130,26 +129,18 @@ def prepare_dataset(ds, image_size=(32, 32), cache=True, repeat=False, preproces
 
 # Load CIFAR-10 dataset
 def prepare_cifar10():
-    dataset_train = tfds.load('cifar10', split='train[:90%]', as_supervised=True)
-    dataset_val = tfds.load('cifar10', split='train[90%:]', as_supervised=True)
+    dataset_train = tfds.load('cifar10', split='train', as_supervised=True)
     dataset_test = tfds.load('cifar10', split='test', as_supervised=True)
 
-    # Convert the dataset to NumPy arrays
     x_train = np.array([image for image, label in tfds.as_numpy(dataset_train)])
-
-    x_val = np.array([image for image, label in tfds.as_numpy(dataset_val)])
-
     x_test = np.array([image for image, label in tfds.as_numpy(dataset_test)])
 
-    # Normalize pixel values to [0, 1]
     x_train = x_train.astype('float32') / 255.0
-    x_val = x_val.astype('float32') / 255.0
     x_test = x_test.astype('float32') / 255.0
 
-    return x_train, x_val, x_test
+    return x_train, x_test
 
 
-# Load CIFAR-10C dataset for corruption type
 def prepare_cifar10_c(corruption_type):
     dataset = tfds.load(f'cifar10_corrupted/{corruption_type}', split='test', as_supervised=True)
 
@@ -158,3 +149,12 @@ def prepare_cifar10_c(corruption_type):
     x_data = x_test.astype('float32') / 255.0
 
     return x_data
+
+
+def get_cifar10_kfold_splits(n_splits):
+    x_train, x_test = prepare_cifar10()
+
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=0)
+    dataset_splits = list(enumerate(kf.split(x_train)))
+
+    return x_train, x_test, dataset_splits
