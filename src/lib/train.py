@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers, models, callbacks
+import numpy as np
+import tensorflow as tf
 
 
-def train(x_train, x_val, x_test, input_shape):
+def train(train_ds, val_ds, x_test, input_shape):
     # Define a residual block
     def residual_block(x, filters, kernel_size=3, stride=1):
         shortcut = x
@@ -19,88 +21,67 @@ def train(x_train, x_val, x_test, input_shape):
         x = layers.Activation('relu')(x)
         return x
 
+    # Encoder
     encoder_input = layers.Input(shape=input_shape)
-
     x = layers.Conv2D(64, (3, 3), strides=2, padding='same')(encoder_input)  # 16x16x64
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = residual_block(x, 64)
     x = residual_block(x, 64)
-
     x = layers.Conv2D(128, (3, 3), strides=2, padding='same')(x)  # 8x8x128
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = residual_block(x, 128)
     x = residual_block(x, 128)
-
     x = layers.Conv2D(256, (3, 3), strides=2, padding='same')(x)  # 4x4x256
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = residual_block(x, 256)
     x = residual_block(x, 256)
-
     encoder_output = x
-
     encoder = models.Model(encoder_input, encoder_output, name='encoder')
 
+    # Decoder
     decoder_input = layers.Input(shape=encoder_output.shape[1:])
-
     x = residual_block(decoder_input, 256)
     x = residual_block(x, 256)
-
     x = layers.Conv2DTranspose(256, (3, 3), strides=2, padding='same')(x)  # 8x8x256
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = residual_block(x, 128)
     x = residual_block(x, 128)
-
     x = layers.Conv2DTranspose(128, (3, 3), strides=2, padding='same')(x)  # 16x16x128
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = residual_block(x, 64)
     x = residual_block(x, 64)
-
     x = layers.Conv2DTranspose(64, (3, 3), strides=2, padding='same')(x)  # 32x32x64
     x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
-
     x = layers.Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)  # Output layer with sigmoid activation
     decoder_output = x
-
     decoder = models.Model(decoder_input, decoder_output, name='decoder')
 
+    # Autoencoder model
     autoencoder_input = encoder_input
     encoded_img = encoder(autoencoder_input)
     decoded_img = decoder(encoded_img)
     autoencoder = models.Model(autoencoder_input, decoded_img, name='autoencoder')
 
+    # Compile model
     autoencoder.compile(optimizer='adam', loss='mean_squared_error')
 
+    # Training
     epochs = 50
     batch_size = 256
-
-    class ReconstructionCallback(callbacks.Callback):
-        def on_epoch_end(self, epoch, logs=None):
-            test_img = x_test[:1]
-            reconstructed_img = self.model.predict(test_img)
-            plt.imshow(reconstructed_img[0])
-            plt.title(f"Reconstruction at Epoch {epoch + 1}")
-            plt.show()
-
     history = autoencoder.fit(
-        x_train, x_train,
+        train_ds,
         epochs=epochs,
         batch_size=batch_size,
         shuffle=True,
-        validation_data=(x_val, x_val),
+        validation_data=val_ds,
         callbacks=[
-            # ReconstructionCallback(),
-           callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
+            callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
         ]
     )
 

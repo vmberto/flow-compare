@@ -144,11 +144,13 @@ def prepare_cifar10():
 def prepare_cifar10_c(corruption_type):
     dataset = tfds.load(f'cifar10_corrupted/{corruption_type}', split='test', as_supervised=True)
 
-    x_test = np.array([image for image, label in tfds.as_numpy(dataset)])
+    x_corrupted = np.array([image for image, label in tfds.as_numpy(dataset)])
 
-    x_data = x_test.astype('float32') / 255.0
+    x_corrupted = x_corrupted.astype('float32') / 255.0
 
-    return x_data
+    corrupted_ds = prepare_dataset(tf.data.Dataset.from_tensor_slices((x_corrupted, x_corrupted)))
+
+    return corrupted_ds
 
 
 def get_cifar10_kfold_splits(n_splits):
@@ -158,3 +160,7 @@ def get_cifar10_kfold_splits(n_splits):
     dataset_splits = list(enumerate(kf.split(x_train)))
 
     return x_train, x_test, dataset_splits
+
+
+def get_dataset(x_data):
+    return prepare_dataset(tf.data.Dataset.from_tensor_slices((x_data, x_data)))

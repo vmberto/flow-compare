@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from scipy.stats import entropy, ttest_ind
-from src.data.data_prep import prepare_cifar10_c, get_cifar10_kfold_splits, comparison_datasets_names
+from src.data.data_prep import prepare_cifar10_c, get_cifar10_kfold_splits, comparison_datasets_names, get_dataset
 from src.lib.kl_divergence import get_kl_divergence
 from src.lib.train import train
 import pandas as pd
@@ -11,13 +10,15 @@ from src.lib.wasserstain_distance import get_wasserstein_distance
 from src.plots.reconstruction import plot_reconstruction
 
 RECONSTRUCTION_NUMBER = 5
-
 GENERATE_KL_DIVERGENCE = False
 PLOT_RECONSTRUCTION = False
 GENERATE_WASSERSTEIN_DISTANCE = True
 
 
 def compute_reconstruction_errors(model, data):
+    if isinstance(data, tf.data.Dataset):
+        data = np.array([x for x, _ in data])
+
     reconstructed = model.predict(data)
     errors = np.mean(np.square(data - reconstructed), axis=(1, 2, 3))
     return errors
@@ -36,33 +37,23 @@ def main():
         x_train_fold = x_train[train_index]
         x_val_fold = x_train[val_index]
 
-        autoencoder, encoder = train(x_train_fold, x_val_fold, x_test, input_shape)
+        train_fold_ds = get_dataset(x_train_fold)
+        val_fold_ds = get_dataset(x_val_fold)
+
+        autoencoder, encoder = train(train_fold_ds, val_fold_ds, x_test, input_shape)
 
         reconstructed_original = autoencoder.predict(x_test[:RECONSTRUCTION_NUMBER])
         latent_original = encoder.predict(x_test)
-        # errors_original = compute_reconstruction_errors(autoencoder, x_test)
 
         for corruption_type in comparison_datasets_names:
-            corrupted_images = prepare_cifar10_c(corruption_type)
-
-            # errors_original = compute_reconstruction_errors(autoencoder, corrupted_images)
-            #
-            # plt.hist(clean_errors, bins=50, alpha=0.5, label='Clean Images')
-            # plt.hist(corrupted_errors, bins=50, alpha=0.5, label='Corrupted Images')
-            # plt.legend()
-            # plt.xlabel('Reconstruction Error')
-            # plt.ylabel('Frequency')
-            # plt.title(f'Reconstruction Errors: Clean vs {corruption_type.capitalize()}')
-            # plt.show()
-            #
-            # stat, p_value = ttest_ind(clean_errors, corrupted_errors)
-            # print(f'T-test statistic: {stat:.4f}, p-value: {p_value:.4e}')
+            corrupted_ds = prepare_cifar10_c(corruption_type)
 
             if PLOT_RECONSTRUCTION:
-                reconstructed_corrupted = autoencoder.predict(corrupted_images[:RECONSTRUCTION_NUMBER])
+                corrupted_data = np.array([x for x, _ in corrupted_ds.take(RECONSTRUCTION_NUMBER)])
+                reconstructed_corrupted = autoencoder.predict(corrupted_data)
                 plot_reconstruction(RECONSTRUCTION_NUMBER, reconstructed_corrupted, reconstructed_original, x_test)
 
-            latent_corrupted = encoder.predict(corrupted_images)
+            latent_corrupted = encoder.predict(corrupted_ds)
 
             if GENERATE_KL_DIVERGENCE:
                 kldiv_result = get_kl_divergence(corruption_type, fold, latent_original, latent_corrupted)
@@ -80,5 +71,5 @@ if __name__ == "__main__":
         p = multiprocessing.Process(target=main)
         p.start()
         p.join()
-    except:
-        pass
+    except Exception as e:
+        print(f"Error occurred: {e}")
